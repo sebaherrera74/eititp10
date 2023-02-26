@@ -55,8 +55,18 @@
 #include "bsp.h"
 #include "task.h"
 #include <stdbool.h>
+#include "event_groups.h"
 
 /* === Definicion y Macros ================================================= */
+
+#define EVENTO_TECLA_1_ON 	( 1 << 0 )
+#define EVENTO_TECLA_2_ON 	( 1 << 1 )
+#define EVENTO_TECLA_3_ON 	( 1 << 2 )
+#define EVENTO_TECLA_4_ON 	( 1 << 3 )
+#define EVENTO_TECLA_1_OFF ( 1 << 4 )
+#define EVENTO_TECLA_2_OFF ( 1 << 5 )
+#define EVENTO_TECLA_3_OFF ( 1 << 6 )
+#define EVENTO_TECLA_4_OFF ( 1 << 7 )
 
 /* === Declaraciones de tipos de datos internos ============================ */
 
@@ -68,13 +78,81 @@ static board_t board;
 
 /* === Definiciones de variables externas ================================== */
 
+EventGroupHandle_t eventos_teclas;
+
+
 /* === Definiciones de funciones internas ================================== */
 
-void Blinking(void * parameters) {
-    while (true) {
-        DigitalOutputToggle(board->led_azul);
-        vTaskDelay(pdMS_TO_TICKS(500));
-    }
+void Azul(void * parameters) {
+	while (true) {
+		EventBits_t eventos;
+		eventos=xEventGroupWaitBits(eventos_teclas,EVENTO_TECLA_1_ON | EVENTO_TECLA_1_OFF,pdTRUE,pdFALSE,portMAX_DELAY);
+
+		if (eventos & EVENTO_TECLA_1_ON ){
+			DigitalOutputActivate(board->led_azul);
+		}
+		else if (eventos & EVENTO_TECLA_1_OFF ){
+			DigitalOutputDeactivate(board->led_azul);
+
+		}
+
+		//vTaskDelay(pdMS_TO_TICKS(500));
+	}
+}
+
+void Amarillo(void * parameters) {
+	while (true) {
+		xEventGroupWaitBits(eventos_teclas,EVENTO_TECLA_2_ON,pdTRUE,pdTRUE,portMAX_DELAY);
+		DigitalOutputToggle(board->led_amarillo);
+
+	}
+}
+
+void Rojo(void * parameters) {
+	while (true) {
+		xEventGroupWaitBits(eventos_teclas,EVENTO_TECLA_3_ON,pdTRUE,pdTRUE,portMAX_DELAY);
+		DigitalOutputActivate(board->led_rojo);
+		xEventGroupWaitBits(eventos_teclas,EVENTO_TECLA_4_ON,pdTRUE,pdTRUE,portMAX_DELAY);
+		DigitalOutputDeactivate(board->led_rojo);
+
+		//vTaskDelay(pdMS_TO_TICKS(500));
+	}
+}
+
+void Teclas(void * parameters) {
+	while (true) {
+
+		if(DigitalInputHasActivated(board->boton_prueba)){
+			xEventGroupSetBits(eventos_teclas,EVENTO_TECLA_1_ON);
+
+		}else if (DigitalInputHasDeactivated(board->boton_prueba)){
+			xEventGroupSetBits(eventos_teclas,EVENTO_TECLA_1_OFF);
+		}
+
+		//Al presionar la tecla 2 el led amarillo deberá cambiar de estado
+		if(DigitalInputHasActivated(board-> boton_cambiar)){
+			xEventGroupSetBits(eventos_teclas,EVENTO_TECLA_2_ON);
+
+		}else if (DigitalInputHasDeactivated(board-> boton_cambiar)){
+			xEventGroupSetBits(eventos_teclas,EVENTO_TECLA_2_OFF);
+		}
+
+		if(DigitalInputHasActivated(board->boton_prender)){
+			xEventGroupSetBits(eventos_teclas,EVENTO_TECLA_3_ON);
+
+		}else if (DigitalInputHasDeactivated(board->boton_prender)){
+			xEventGroupSetBits(eventos_teclas,EVENTO_TECLA_3_OFF);
+		}
+
+		if(DigitalInputHasActivated(board->boton_apagar)){
+			xEventGroupSetBits(eventos_teclas,EVENTO_TECLA_4_ON);
+
+		}else if (DigitalInputHasDeactivated(board->boton_apagar)){
+			xEventGroupSetBits(eventos_teclas,EVENTO_TECLA_4_OFF);
+		}
+
+		vTaskDelay(pdMS_TO_TICKS(500));
+	}
 }
 
 /* === Definiciones de funciones externas ================================== */
@@ -87,21 +165,25 @@ void Blinking(void * parameters) {
  **          El valor de retorno 0 es para evitar un error en el compilador.
  */
 int main(void) {
-    /* Inicializaciones y configuraciones de dispositivos */
-    board = BoardCreate();
+	/* Inicializaciones y configuraciones de dispositivos */
+	board = BoardCreate();
 
-    /* Creación de las tareas */
-    xTaskCreate(Blinking, "Baliza", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, NULL);
+	eventos_teclas=xEventGroupCreate();
 
-    /* Arranque del sistema operativo */
-    vTaskStartScheduler();
+	/* Creación de las tareas */
+	xTaskCreate(Azul, "azul", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, NULL);
+	xTaskCreate(Amarillo, "amarillo", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, NULL);
+	xTaskCreate(Rojo, "rojo", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, NULL);
+	xTaskCreate(Teclas, "Escanteclas", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 2, NULL);
+	/* Arranque del sistema operativo */
+	vTaskStartScheduler();
 
-    /* vTaskStartScheduler solo retorna si se detiene el sistema operativo */
-    while (1) {
-    };
+	/* vTaskStartScheduler solo retorna si se detiene el sistema operativo */
+	while (1) {
+	};
 
-    /* El valor de retorno es solo para evitar errores en el compilador*/
-    return 0;
+	/* El valor de retorno es solo para evitar errores en el compilador*/
+	return 0;
 }
 /* === Ciere de documentacion ============================================== */
 /** @} Final de la definición del modulo para doxygen */

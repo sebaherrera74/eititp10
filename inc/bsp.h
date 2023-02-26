@@ -62,10 +62,10 @@ typedef struct board_s {
     digital_output_t led_amarillo;
     digital_output_t led_verde;
 
-    digital_input_t boton_prueba;
-    digital_input_t boton_cambiar;
-    digital_input_t boton_prender;
-    digital_input_t boton_apagar;
+    digital_input_t boton_prueba;    //Tecla 1
+    digital_input_t boton_cambiar;   //Tecla2
+    digital_input_t boton_prender;  //Tecla3
+    digital_input_t boton_apagar;    //Tecla 4
 } * board_t;
 
 /* === Public variable declarations ============================================================ */
