@@ -82,6 +82,12 @@ EventGroupHandle_t eventos_teclas;
 
 
 /* === Definiciones de funciones internas ================================== */
+void BlinkingVerde(void * parametros) {
+	while(true) {
+		DigitalOutputToggle(board->led_verde);
+		vTaskDelay(pdMS_TO_TICKS(660));
+	}
+}
 
 void Azul(void * parameters) {
 	while (true) {
@@ -104,7 +110,6 @@ void Amarillo(void * parameters) {
 	while (true) {
 		xEventGroupWaitBits(eventos_teclas,EVENTO_TECLA_2_ON,pdTRUE,pdTRUE,portMAX_DELAY);
 		DigitalOutputToggle(board->led_amarillo);
-
 	}
 }
 
@@ -171,10 +176,11 @@ int main(void) {
 	eventos_teclas=xEventGroupCreate();
 
 	/* Creación de las tareas */
-	xTaskCreate(Azul, "azul", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, NULL);
-	xTaskCreate(Amarillo, "amarillo", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, NULL);
-	xTaskCreate(Rojo, "rojo", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, NULL);
-	xTaskCreate(Teclas, "Escanteclas", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 2, NULL);
+	xTaskCreate(BlinkingVerde,"verde",configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, NULL);
+	xTaskCreate(Azul,"azul",configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, NULL);
+	xTaskCreate(Amarillo,"amarillo",configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1,NULL);
+	xTaskCreate(Rojo,"rojo",configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, NULL);
+	xTaskCreate(Teclas,"Escanteclas",configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 2,NULL);
 	/* Arranque del sistema operativo */
 	vTaskStartScheduler();
 
